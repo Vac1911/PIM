@@ -85,6 +85,10 @@ function updateShape() {
     else
         poly.setLatLngs(coords).redraw();
 
+    updateMidpoints();
+}
+
+function updateMidpoints() {
     if (coords.length > 1) {
         midMarkers.forEach(m => m.remove());
         midMarkers = [];
@@ -92,13 +96,23 @@ function updateShape() {
             const p0 = latlngToPoint(coords[i]),
                 p1 = latlngToPoint(coords[i + 1 < coords.length ? i + 1 : 0]),
                 pMid = pointToLatlng(midpoint(p0, p1));
-            console.log(pMid);
             let midMarker = new L.Marker(pMid, {
                 icon: options.icon,
                 zIndexOffset: 2000,
                 draggable: true,
+                opacity: 0.5,
             }).addTo(map);
             midMarkers.push(midMarker);
+            midMarker.on("click", (e) => {
+                var midMarker = e.target;
+                const index = midMarkers.findIndex(m => m._leaflet_id === midMarker._leaflet_id);
+                console.log('mid click', index);
+
+                // Remove from midMarkers at index
+                // add to markers at index + 1
+
+                // updateShape();
+            });
         }
     }
 }
@@ -152,6 +166,7 @@ function setShape(shape, e) {
     poly = shape;
     coords = shape.getLatLngs()[0];
     coords.forEach(c => createMarker(c));
+    updateMidpoints();
 }
 
 function setMode(nextMode, force = true) {
@@ -159,6 +174,10 @@ function setMode(nextMode, force = true) {
         if (markers.length)
             markers.forEach(m => m.remove());
         markers = [];
+
+        if (midMarkers.length)
+            midMarkers.forEach(m => m.remove());
+        midMarkers = [];
 
         if (poly !== null)
             poly.remove();
