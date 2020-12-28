@@ -5,10 +5,20 @@ body {
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
 }
 
+.leaflet-cursor-icon {
+  border-radius: 50%;
+}
+
 a {
   color: #00B7FF;
 }
 
 #map {
   height: 70vh;
+  &[mode="none"] .leaflet-cursor-icon {
+    display: none;
+  }
+  &:not([mode="none"]) {
+    cursor: default;
+  }
 }
