@@ -57,11 +57,16 @@ function trackCursor(e) {
 
     let cursorCoord = e.latlng;
 
-    if (e.originalEvent.shiftKey && overlay.length)
+    const otherPolygons = (mode === 'edit') ? [...overlay.filter(p => p._leaflet_id !== poly._leaflet_id)] : [...overlay];
+
+    if(mode === 'edit')
+        console.log(otherPolygons, poly._leaflet_id);
+
+    if (e.originalEvent.shiftKey && otherPolygons.length)
         if (e.originalEvent.ctrlKey)
-            cursorCoord = pointToCoord(nearestVertexInPolyLines(cursorCoord, overlay));
+            cursorCoord = pointToCoord(nearestVertexInPolyLines(cursorCoord, otherPolygons));
         else
-            cursorCoord = pointToCoord(nearestPointOnPolyLines(cursorCoord, overlay));
+            cursorCoord = pointToCoord(nearestPointOnPolyLines(cursorCoord, otherPolygons));
 
     cursorMarker = new Marker(cursorCoord, {
         icon: options.cursorIcon,
@@ -133,11 +138,13 @@ function createMarker(c) {
             cursorCoord = marker.getLatLng();
         const index = markers.findIndex(m => m._leaflet_id === marker._leaflet_id);
 
-        // if (e.originalEvent.shiftKey && overlay.length)
-        //     if (e.originalEvent.ctrlKey)
-        //         cursorCoord = pointToCoord(nearestVertexInPolyLines(cursorCoord, overlay));
-        //     else
-        //         cursorCoord = pointToCoord(nearestPointOnPolyLines(cursorCoord, overlay));
+        if (e.originalEvent.shiftKey && overlay.length)
+            if (e.originalEvent.ctrlKey)
+                console.log('ctrl + shift');
+                // cursorCoord = pointToCoord(nearestVertexInPolyLines(cursorCoord, overlay));
+            else
+                console.log('ctrl');
+                // cursorCoord = pointToCoord(nearestPointOnPolyLines(cursorCoord, overlay));
 
         coords[index] = cursorCoord;
         updateShape();
