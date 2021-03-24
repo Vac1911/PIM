@@ -1,5 +1,7 @@
+window.ms = require('./lib/milgraphics');
+
 import "./map.js";
 import MilUnit from "./MilUnit";
 
 let units = [new MilUnit()];
-console.log(units[0]->getSidcCode());
+document.getElementById('sidebar').innerHTML = units[0].getSym();

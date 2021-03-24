@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "build": "webpack",
-    "watch": "webpack --watch"
+    "build": "webpack"
   },
   "dependencies": {
     "@turf/turf": "^5.1.6",
@@ -15,6 +14,7 @@
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
     "leaflet": "^1.7.1",
+    "milsymbol": "^2.0.0",
     "morgan": "~1.9.1",
     "node-sass-middleware": "0.11.0",
     "pug": "2.0.0-beta11"
