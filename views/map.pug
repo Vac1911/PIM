@@ -1,11 +1,16 @@
 extends layout
 
 block content
-  h1= title
-  main
-    div#topbar
-        div
-            button#createMode.btn.btn-sm.btn-primary Create
-            button#circleMode.btn.btn-sm.btn-primary Circle
-        div#mode
-    div#map
+    //h1= title
+    div#grid
+        div#topbar
+            div
+                button#createMode.btn.btn-sm.btn-primary Create
+                button#removeMode.btn.btn-sm.btn-danger Remove
+                //- button#circleMode.btn.btn-sm.btn-primary Circle
+            div#mode
+        div#map
+        div#sidebar
+        div#task
+            button.btn.btn-sm.btn-secondary(value="G-G-OLAGM-----X" geo-type="polyline") Main Attack
+            button.btn.btn-sm.btn-secondary(value="G-G-OLAGS-----X" geo-type="polyline") Supporting Attack

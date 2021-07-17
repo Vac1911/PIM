@@ -1,8 +1,7 @@
-import {tileLayer as TileLayer, map as LeafletMap, control, DivIcon, Point as LeafletPoint, Marker, Polyline, Polygon} from "leaflet";
+import { tileLayer as TileLayer, map as LeafletMap, control, DivIcon, Point as LeafletPoint, Marker, Polyline, Polygon } from "leaflet";
 import HotkeyManager from "./HotkeyManager";
-import {lineString, midpoint, nearestPointOnLine, point, featureCollection, nearestPoint, circle} from "@turf/turf";
+import { lineString, midpoint, nearestPointOnLine, point, featureCollection, nearestPoint, circle } from "@turf/turf";
 
-// map.addHandler('draw', Polyline);
 var base = TileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
     maxZoom: 18,
     id: 'mapbox/streets-v11',
@@ -10,15 +9,18 @@ var base = TileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?ac
     zoomOffset: -1
 });
 // Overlay layers (TMS)
-var lyr = TileLayer('./{z}/{x}/{y}.png', {tms: true, opacity: 0.7, attribution: "", minZoom: 1, maxZoom: 6});
-const map = LeafletMap('map', {layers: [base]}).setView([51.505, -0.09], 12);
-control.layers({"Base": base}, {"Layer": lyr}, {collapsed: false}).addTo(map);
+var lyr = TileLayer('./{z}/{x}/{y}.png', { tms: true, opacity: 0.7, attribution: "", minZoom: 1, maxZoom: 6 });
+const map = LeafletMap(document.getElementById('map'), { layers: [base] }).setView([51.505, -0.09], 10);
+control.scale().addTo(map);
+control.layers({ "Base": base }, { "Layer": lyr }, { collapsed: false }).addTo(map);
 let markers = [],
     midMarkers = [],
     cursorMarker = false,
     coords = [],
     overlay = [],
+    handlers = {},
     poly = null,
+    type = null,
     mode = 'none',
     options = {
         icon: new DivIcon({
@@ -28,6 +30,10 @@ let markers = [],
         cursorIcon: new DivIcon({
             iconSize: new LeafletPoint(12, 12),
             className: 'leaflet-div-icon leaflet-cursor-icon'
+        }),
+        cursorTracker: new DivIcon({
+            iconSize: new LeafletPoint(6, 6),
+            className: 'leaflet-div-icon leaflet-tracker-icon'
         }),
         shape: {
             stroke: true,
@@ -41,6 +47,9 @@ let markers = [],
 
 HotkeyManager.setHotkey('Escape', finishUpdate);
 document.getElementById('createMode').addEventListener('click', () => setMode('create', false));
+
+document.getElementById('task').querySelectorAll('button')
+    .forEach(btn => btn.addEventListener('click', (e) => setTask(btn.value, btn.getAttribute('geo-type'), e)))
 // document.getElementById('circleMode').addEventListener('click', () => setMode('circle', false));
 
 enableDrawMixin();
@@ -57,16 +66,15 @@ function trackCursor(e) {
 
     let cursorCoord = e.latlng;
 
-    const otherPolygons = (mode === 'edit') ? [...overlay.filter(p => p._leaflet_id !== poly._leaflet_id)] : [...overlay];
-
-    if(mode === 'edit')
-        console.log(otherPolygons, poly._leaflet_id);
-
-    if (e.originalEvent.shiftKey && otherPolygons.length)
-        if (e.originalEvent.ctrlKey)
-            cursorCoord = pointToCoord(nearestVertexInPolyLines(cursorCoord, otherPolygons));
-        else
-            cursorCoord = pointToCoord(nearestPointOnPolyLines(cursorCoord, otherPolygons));
+    if (e.originalEvent.shiftKey && overlay.length) {
+        const otherPolygons = poly ? overlay.filter(p => p._leaflet_id !== poly._leaflet_id) : overlay;
+        if(otherPolygons.length) {
+            if (e.originalEvent.ctrlKey)
+                cursorCoord = pointToCoord(nearestVertexInPolyLines(cursorCoord, otherPolygons));
+            else
+                cursorCoord = pointToCoord(nearestPointOnPolyLines(cursorCoord, otherPolygons));
+        }
+    }
 
     cursorMarker = new Marker(cursorCoord, {
         icon: options.cursorIcon,
@@ -77,7 +85,7 @@ function trackCursor(e) {
 
 function nearestPointOnPolyLines(coord, polylines) {
     const nearestLinePoints = polylines.map(s => s.getLatLngs()[0].map(c => coordToArray(c)))
-            .map(arr => nearestPointOnLine(lineString([...arr, arr[0]]), coordToPoint(coord))),
+        .map(arr => nearestPointOnLine(lineString([...arr, arr[0]]), coordToPoint(coord))),
         distances = nearestLinePoints.map(p => p.properties.dist),
         lowestDistance = Math.min(...distances),
         nearestIndex = distances.indexOf(lowestDistance);
@@ -107,7 +115,7 @@ function handleClick(e) {
 
 function drawCircle(center) {
     var radius = 2000;
-    var options = {steps: 32, units: 'kilometers'};
+    var options = { steps: 32, units: 'kilometers' };
     var greatCircle = circle(center, radius, options);
     console.log(greatCircle);
     coords = greatCircle.geometry.coordinates[0].slice(1).map(p => arrayToCoord(p));
@@ -135,18 +143,17 @@ function createMarker(c) {
     marker.on('click', (e) => touchMarker(marker, e));
     marker.on("drag", (e) => {
         let marker = e.target,
-            cursorCoord = marker.getLatLng();
+            cursorCoord = cursorMarker.getLatLng();
         const index = markers.findIndex(m => m._leaflet_id === marker._leaflet_id);
 
-        if (e.originalEvent.shiftKey && overlay.length)
-            if (e.originalEvent.ctrlKey)
-                console.log('ctrl + shift');
-                // cursorCoord = pointToCoord(nearestVertexInPolyLines(cursorCoord, overlay));
-            else
-                console.log('ctrl');
-                // cursorCoord = pointToCoord(nearestPointOnPolyLines(cursorCoord, overlay));
-
         coords[index] = cursorCoord;
+
+        // new Marker(cursorCoord, {
+        //     icon: options.cursorTracker,
+        //     zIndexOffset: 1000,
+        //     draggable: false,
+        // }).addTo(map);
+
         updateShape();
     });
     return marker;
@@ -165,7 +172,7 @@ function updateMidpoints() {
     if (coords.length > 1) {
         midMarkers.forEach(m => m.remove());
         midMarkers = [];
-        for (let i = 0; i < (mode === 'create' ? coords.length - 1 : coords.length); i++) {
+        for (let i = 0; i < (mode === 'create' || type === 'polyline' ? coords.length - 1 : coords.length); i++) {
             const p0 = coordToPoint(coords[i]),
                 p1 = coordToPoint(coords[i + 1 < coords.length ? i + 1 : 0]),
                 pMid = pointToCoord(midpoint(p0, p1));
@@ -189,6 +196,8 @@ function updateMidpoints() {
 }
 
 function touchMarker(marker, e) {
+    if (mode !== 'create')
+        return;
     const position = markers.findIndex(m => m._leaflet_id === marker._leaflet_id);
     if (position === 0 && markers.length > 2) {
         outputShape({
@@ -203,7 +212,7 @@ function touchMarker(marker, e) {
         outputShape({
             stroke: true,
             color: '#3388ff',
-            weight: 4,
+            weight: 3,
             opacity: 0.5,
             fill: false,
             clickable: true
@@ -223,8 +232,17 @@ function outputShape(options, type = 'Polygon') {
     markers.forEach(m => m.remove());
     markers = [];
     let shape = new L[type](coords, options).addTo(map);
+    if (type === 'Polygon') {
+        shape.on('click', (e) => setShape(shape, e));
+    } else {
+        // Create Handler
+        let handler = new L[type](coords, Object.assign(options, { weight: 20, opacity: 0.25 })).addTo(map);
+        handler.on('click', (e) => {
+            if (setShape(shape, e))
+                handler.remove();
+        });
+    }
     overlay.push(shape);
-    shape.on('click', (e) => setShape(shape, e));
     coords = [];
 
     setMode('none');
@@ -234,9 +252,37 @@ function setShape(shape, e) {
     if (!setMode('edit', false))
         return false;
     poly = shape;
-    coords = shape.getLatLngs()[0];
+    if (Array.isArray(shape.getLatLngs()[0])) {
+        coords = shape.getLatLngs()[0];
+        type = 'polygon';
+    }
+    else {
+        coords = shape.getLatLngs();
+        type = 'polyline';
+    }
     coords.forEach(c => createMarker(c));
     updateMidpoints();
+    return true;
+}
+
+function setTask(sidc, type, e) {
+    console.log(sidc, type, coords.map(c => coordToArray(c)));
+    let taticalJson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "sidc": sidc
+                },
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": coords.map(c => coordToArray(c))
+                }
+            }
+        ]
+    }
+    console.log(JSON.stringify(new ms.GraphicsLayer(new ms.format.GeoJSON(taticalJson)).data));
 }
 
 function setMode(nextMode, force = true) {
@@ -259,8 +305,7 @@ function setMode(nextMode, force = true) {
         document.getElementById('map').setAttribute("mode", nextMode);
         mode = nextMode;
         return true;
-    }
-    else {
+    } else {
         return false;
     }
 }
@@ -274,8 +319,9 @@ function coordToArray(coord) {
 }
 
 function arrayToCoord(arr) {
-    return {lat: arr[1], lng: arr[0]};
+    return { lat: arr[1], lng: arr[0] };
 }
+
 function pointToCoord(point) {
     return arrayToCoord(point.geometry.coordinates);
 }

@@ -1,28 +1,46 @@
 @import "../node_modules/bootstrap/scss/bootstrap";
 
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+  background-color: $light;
 }
 
 .leaflet-cursor-icon {
   border-radius: 50%;
 }
 
+.leaflet-tracker-icon {
+  border-radius: 50%;
+  background-color: red;
+}
+
 a {
   color: #00B7FF;
 }
 
-main {
+#grid {
+  padding: 3rem;
+  min-height: 100vh;
   display: grid;
-  min-height: 100%;
+  gap: 1rem;
   grid-template-columns: 2fr 1fr;
-  grid-template-rows: 1fr 70vh;
+  grid-template-rows: auto 1fr 1fr;
   grid-template-areas:
           'topbar topbar'
-          'map sidebar';
+          'map sidebar'
+          'map task';
+  > * {
+    background-color: $white;
+  }
   #topbar {
     grid-area: topbar;
+  }
+  #sidebar {
+    grid-area: sidebar;
+  }
+  #task {
+    grid-area: task;
   }
   #map {
     grid-area: map;
