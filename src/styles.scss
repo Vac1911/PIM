@@ -3,7 +3,8 @@
 body {
   font: 16px "Lucida Grande", Helvetica, Arial, sans-serif;
   min-height: 100vh;
-  background-color: $light;
+  background: $dark;
+  color: $light;
 }
 
 .leaflet-cursor-icon {

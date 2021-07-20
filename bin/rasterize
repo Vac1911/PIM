@@ -1,0 +1,30 @@
+#!/usr/bin/env node
+
+const path = require('path');
+const Layer = require('../tileserver/layer');
+const features = require('../tileserver/data/world').features;
+
+
+
+const width = 1800
+const height = 900
+const coordMaxX = 180;
+const coordMaxY = 80;
+const layer = new Layer(width, height, coordMaxX, coordMaxY)
+
+for(const feature of features) {
+    layer.createFeature(feature, 'white');
+}
+
+let markers = [
+    [{x: 0, y: 0}, 'cyan'],
+    [{x: -180, y: 80}, 'blue'],
+    [{x: 180, y: -80}, 'blue'],
+    [{x: 13.4, y: 52.5}, 'lime'],
+];
+for(const [coord, color] of markers) {
+    layer.createMarker(coord, color);
+}
+
+const file = path.resolve(__dirname, '../public/map.png');
+layer.writeImage(file);
