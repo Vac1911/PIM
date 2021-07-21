@@ -4,13 +4,7 @@ const path = require('path');
 const Layer = require('../tileserver/layer');
 const features = require('../tileserver/data/world').features;
 
-
-
-const width = 1800
-const height = 900
-const coordMaxX = 180;
-const coordMaxY = 80;
-const layer = new Layer(width, height, coordMaxX, coordMaxY)
+const layer = new Layer(1)
 
 for(const feature of features) {
     layer.createFeature(feature, 'white');
