@@ -68,7 +68,7 @@ function trackCursor(e) {
 
     if (e.originalEvent.shiftKey && overlay.length) {
         const otherPolygons = poly ? overlay.filter(p => p._leaflet_id !== poly._leaflet_id) : overlay;
-        if(otherPolygons.length) {
+        if (otherPolygons.length) {
             if (e.originalEvent.ctrlKey)
                 cursorCoord = pointToCoord(nearestVertexInPolyLines(cursorCoord, otherPolygons));
             else
@@ -119,17 +119,11 @@ function drawCircle(center) {
     var greatCircle = circle(center, radius, options);
     console.log(greatCircle);
     coords = greatCircle.geometry.coordinates[0].slice(1).map(p => arrayToCoord(p));
-    markers.forEach(m => m.remove());
-    markers = [];
-    midMarkers.forEach(m => m.remove());
-    midMarkers = [];
-    coords.forEach(c => createMarker(c));
     updateShape();
 }
 
 function drawCoord(c) {
     coords.push(c);
-    createMarker(c);
     updateShape();
 }
 
@@ -139,7 +133,7 @@ function createMarker(c) {
         zIndexOffset: 2000,
         draggable: true,
     }).addTo(map);
-    markers.push(marker);
+
     marker.on('click', (e) => touchMarker(marker, e));
     marker.on("drag", (e) => {
         let marker = e.target,
@@ -148,14 +142,16 @@ function createMarker(c) {
 
         coords[index] = cursorCoord;
 
-        // new Marker(cursorCoord, {
-        //     icon: options.cursorTracker,
-        //     zIndexOffset: 1000,
-        //     draggable: false,
-        // }).addTo(map);
-
         updateShape();
     });
+    marker.on('contextmenu', e => {
+        let marker = e.target;
+        const index = markers.findIndex(m => m._leaflet_id === marker._leaflet_id);
+        if (coords.length > 3) {
+            const removed = coords.splice(index, 1);
+            updateShape();
+        }
+    })
     return marker;
 }
 
@@ -165,6 +161,27 @@ function updateShape() {
     else
         poly.setLatLngs(coords).redraw();
 
+    updateMarkers();
+}
+
+function updateMarkers() {
+    const count = Math.max(markers.length, coords.length);
+    if (count > -1) {
+        for (let i = 0; i < count; i++) {
+            if (coords[i]) {
+                if(markers[i])
+                    markers[i].setLatLng(coords[i]);
+                else
+                    markers[i] = createMarker(coords[i]);
+            }
+            else {
+                markers[i].remove();
+                markers[i] = null;
+            }
+        }
+        markers = markers.filter(m => m);
+        console.log(markers);
+    }
     updateMidpoints();
 }
 
@@ -187,8 +204,6 @@ function updateMidpoints() {
                 const midMarker = e.target,
                     index = midMarkers.findIndex(m => m._leaflet_id === midMarker._leaflet_id);
                 coords = [...coords.slice(0, index + 1), e.latlng, ...coords.slice(index + 1)];
-                markers = [...markers.slice(0, index + 1), createMarker(e.latlng), ...markers.slice(index + 1)];
-
                 updateShape();
             });
         }
@@ -260,8 +275,7 @@ function setShape(shape, e) {
         coords = shape.getLatLngs();
         type = 'polyline';
     }
-    coords.forEach(c => createMarker(c));
-    updateMidpoints();
+    updateMarkers();
     return true;
 }
 
